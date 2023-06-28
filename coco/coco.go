@@ -7,20 +7,22 @@ import (
 )
 
 // HandlerFunc  defines the request handler type by coco
-type HandlerFunc func(w http.ResponseWriter, r *http.Request)
+type HandlerFunc func(c *Context)
 
 // Engine implement the interface of ServeHTTP
 type Engine struct {
 	router map[string]HandlerFunc
 }
 
-// ServeHTTP 方法
+// ServeHTTP 拦截所有的http请求
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("12321312312")
+	c := GenerateContext(w, req)
 	// 先获取请求的路径，按照格式拼接成需要的 key
 	key := req.Method + "_" + req.URL.Path
 	// 从对应的路由表中取方法，取得到就执行，取不到就说明用户访问了一个不存在的路由
 	if handler, ok := engine.router[key]; ok {
-		handler(w, req)
+		handler(c)
 	} else {
 		_, _ = fmt.Fprintf(w, "404 NOT FOUND: %s\n", req.URL)
 	}

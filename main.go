@@ -1,14 +1,19 @@
 package main
 
 import (
+	"coco"
 	"fmt"
 	"net/http"
 )
 
 func main() {
-	c := coco.New()
-	c.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, "Hello")
+	co := coco.New()
+	co.POST("/login", func(c *coco.Context) {
+		fmt.Println(c.Path)
+		c.JSON(http.StatusOK, coco.H{
+			"username": c.PostForm("username"),
+			"password": c.PostForm("password"),
+		})
 	})
-	_ = c.Run(":9999")
+	_ = co.Run(":9999")
 }
