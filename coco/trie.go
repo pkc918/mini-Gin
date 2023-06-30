@@ -1,5 +1,7 @@
 package coco
 
+import "strings"
+
 type node struct {
 	pattern  string  // 待匹配路由，例如 /p/:lang
 	part     string  // 路由中的一部分，例如 :lang
@@ -42,7 +44,7 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	child.insert(pattern, parts, height+1)
 }
 
-// matchChildren 搜集所有匹配成功的节点
+// matchChildren 搜集所有匹配成功的子节点，比如在  lang 节点下有a，b，c，nodes就会取出[a]，或者[a,b]等符合要求的
 func (n *node) matchChildren(part string) []*node {
 	nodes := make([]*node, 0)
 	for _, child := range n.children {
@@ -51,4 +53,27 @@ func (n *node) matchChildren(part string) []*node {
 		}
 	}
 	return nodes
+}
+
+// search 在 Trie 树上查找满足 parts 条件的节点
+func (n *node) search(parts []string, height int) *node {
+	// HasPrefix 判断某个字符串是否从某个字符开始
+	if len(parts) == height || strings.HasPrefix(n.part, "*") {
+		if n.pattern == "" {
+			return nil
+		}
+		// 找到最后匹配成功的 node
+		return n
+	}
+	part := parts[height]
+	children := n.matchChildren(part)
+
+	for _, child := range children {
+		result := child.search(parts, height+1)
+		if result != nil {
+			return result
+		}
+	}
+
+	return nil
 }
