@@ -17,9 +17,15 @@ type Context struct {
 	/* request */
 	Path   string
 	Method string
+	Params map[string]string
 
 	/* response */
 	StatusCode int
+}
+
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 // GenerateContext 生成一个 Context
