@@ -28,8 +28,8 @@ func (c *Context) Param(key string) string {
 	return value
 }
 
-// GenerateContext 生成一个 Context
-func GenerateContext(w http.ResponseWriter, r *http.Request) *Context {
+// newContext 生成一个 Context
+func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Writer: w,
 		Req:    r,

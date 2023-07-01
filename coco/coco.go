@@ -19,7 +19,7 @@ func New() *Engine {
 
 // ServeHTTP 拦截所有的http请求
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	c := GenerateContext(w, req)
+	c := newContext(w, req)
 	engine.router.handle(c)
 }
 
