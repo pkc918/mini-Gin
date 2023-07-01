@@ -14,13 +14,13 @@ type Engine struct {
 
 // New return a constructor of coco.Engine
 func New() *Engine {
-	return &Engine{router: GenerateRouter()}
+	return &Engine{router: newRouter()}
 }
 
 // ServeHTTP 拦截所有的http请求
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := GenerateContext(w, req)
-	engine.router.Handle(c)
+	engine.router.handle(c)
 }
 
 // Run defines the method to start a http server

@@ -12,10 +12,12 @@ type router struct {
 }
 
 // Handle 执行对应路由下的函数
-func (r *router) Handle(c *Context) {
-	key := c.Method + "_" + c.Path
-	if handler, ok := r.handlers[key]; ok {
-		handler(c)
+func (r *router) handle(c *Context) {
+	n, params := r.getRouter(c.Method, c.Path)
+	if n != nil {
+		c.Params = params
+		key := c.Method + "_" + c.Path
+		r.handlers[key](c)
 	} else {
 		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
 	}
