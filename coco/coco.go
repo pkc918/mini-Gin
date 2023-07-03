@@ -7,14 +7,39 @@ import (
 // HandlerFunc  defines the request handler type by coco
 type HandlerFunc func(c *Context)
 
+// RouterGroup 路由分组
+type RouterGroup struct {
+	prefix      string        // 前缀：作用在哪个路由
+	middlewares []HandlerFunc // 中间件处理函数
+	parent      *RouterGroup
+	engine      *Engine
+}
+
 // Engine implement the interface of ServeHTTP
 type Engine struct {
+	*RouterGroup
+	groups []*RouterGroup
 	router *router
 }
 
 // New return a constructor of coco.Engine
 func New() *Engine {
-	return &Engine{router: newRouter()}
+	engine := &Engine{router: newRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+// Group 分组
+func (group *RouterGroup) Group(prefix string) *RouterGroup {
+	engine := group.engine
+	newGroup := &RouterGroup{
+		prefix: group.prefix + prefix,
+		parent: group,
+		engine: engine,
+	}
+	engine.groups = append(engine.groups, newGroup)
+	return newGroup
 }
 
 // ServeHTTP 拦截所有的http请求
@@ -30,16 +55,16 @@ func (engine *Engine) Run(address string) (err error) {
 }
 
 // GET 默认一个 get 请求
-func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.addRoute("GET", pattern, handler)
+func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
+	group.addRoute("GET", pattern, handler)
 }
 
 // POST 默认一个 post 请求
-func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.addRoute("POST", pattern, handler)
+func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
+	group.addRoute("POST", pattern, handler)
 }
 
-// 中转一下
-func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	engine.router.addRoute(method, pattern, handler)
+func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
+	pattern := group.prefix + comp
+	group.engine.router.addRoute(method, pattern, handler)
 }

@@ -29,5 +29,18 @@ func main() {
 			"filepath": c.Param("filepath"),
 		})
 	})
+
+	v1 := co.Group("/v1")
+	{
+		v1.GET("/", func(c *coco.Context) {
+			c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		})
+
+		v1.GET("/hello", func(c *coco.Context) {
+			// expect /hello?name=geektutu
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
+		})
+	}
+
 	_ = co.Run(":9999")
 }
