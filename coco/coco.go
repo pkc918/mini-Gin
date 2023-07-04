@@ -2,6 +2,7 @@ package coco
 
 import (
 	"net/http"
+	"strings"
 )
 
 // HandlerFunc  defines the request handler type by coco
@@ -30,6 +31,11 @@ func New() *Engine {
 	return engine
 }
 
+// Use 将中间件添加到 Group 上
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
+}
+
 // Group 分组
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	engine := group.engine
@@ -44,7 +50,16 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 
 // ServeHTTP 拦截所有的http请求
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+	for _, group := range engine.groups {
+		// 将用户设置的对应组下的中间件添加到对应的组中
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			// group.middlewares 用户通过 Use 设置的中间件
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(w, req)
+	c.handlers = middlewares
 	engine.router.handle(c)
 }
 

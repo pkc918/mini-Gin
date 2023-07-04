@@ -21,11 +21,10 @@ type Context struct {
 
 	/* response */
 	StatusCode int
-}
 
-func (c *Context) Param(key string) string {
-	value, _ := c.Params[key]
-	return value
+	/* middleware */
+	handlers []HandlerFunc
+	index    int
 }
 
 // newContext 生成一个 Context
@@ -35,7 +34,26 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 		Req:    r,
 		Path:   r.URL.Path,
 		Method: r.Method,
+		index:  -1,
 	}
+}
+
+func (c *Context) Next() {
+	c.index++ // 记录当前中间件执行到哪个了,第一次++就是初始化从-1 变为 0
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
+	}
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
+}
+
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 // JSON 序列化返回值
