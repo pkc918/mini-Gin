@@ -3,64 +3,46 @@ package main
 import (
 	"coco"
 	"fmt"
-	"log"
+	"html/template"
 	"net/http"
 	"time"
 )
 
-func middlewareByV2() coco.HandlerFunc {
-	return func(c *coco.Context) {
-		t := time.Now()
-		c.Fail(500, "Internet Server Error")
-		//c.Status(200)
-		log.Printf("[%d] %s in %v for group v2", c.StatusCode, c.Req.RequestURI, time.Since(t))
-	}
+type student struct {
+	Name string
+	Age  int8
+}
+
+func FormatAsDate(t time.Time) string {
+	year, month, day := t.Date()
+	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
 }
 
 func main() {
 	co := coco.New()
+	co.Use(coco.Logger())
+	co.SetFuncMap(template.FuncMap{
+		"FormatAsDate": FormatAsDate,
+	})
+	co.LoadHTMLGlob("templates/*")
+	co.Static("/assets", "./static")
+	stu1 := &student{Name: "coco", Age: 1}
+	stu2 := &student{Name: "Jack", Age: 2}
 	co.GET("/", func(c *coco.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello coco</h1>")
+		c.HTML(http.StatusOK, "css.tmpl", nil)
 	})
-
-	co.GET("/userInfo", func(c *coco.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
-	})
-
-	co.POST("/login", func(c *coco.Context) {
-		fmt.Println(c.Path)
-		c.JSON(http.StatusOK, coco.H{
-			"username": c.PostForm("username"),
-			"password": c.PostForm("password"),
+	co.GET("/students", func(c *coco.Context) {
+		c.HTML(http.StatusOK, "arr.tmpl", coco.H{
+			"title":  "gee",
+			"stuArr": [2]*student{stu1, stu2},
 		})
 	})
 
-	co.GET("/assets/*filepath", func(c *coco.Context) {
-		c.JSON(http.StatusOK, coco.H{
-			"filepath": c.Param("filepath"),
+	co.GET("/date", func(c *coco.Context) {
+		c.HTML(http.StatusOK, "custom_func.tmpl", coco.H{
+			"title": "gee",
+			"now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
 		})
 	})
-
-	v1 := co.Group("/v1")
-	{
-		v1.GET("/", func(c *coco.Context) {
-			c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
-		})
-
-		v1.GET("/hello", func(c *coco.Context) {
-			// expect /hello?name=geektutu
-			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
-		})
-	}
-
-	v2 := co.Group("/v2")
-	v2.Use(middlewareByV2()) // v2 group middleware
-	{
-		v2.GET("/hello/:name", func(c *coco.Context) {
-			// expect /hello/geektutu
-			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
-		})
-	}
-
 	_ = co.Run(":9999")
 }
